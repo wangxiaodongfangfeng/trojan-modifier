@@ -1,0 +1,14 @@
+@trojan_modifier_HostAddress = http://localhost:5192
+
+GET {{trojan_modifier_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+POST {{trojan_modifier_HostAddress}}/proxyserver
+Accept: application/json
+
+{
+   
+}
+###
