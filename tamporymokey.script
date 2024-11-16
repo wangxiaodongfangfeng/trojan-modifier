@@ -1,0 +1,74 @@
+// ==UserScript==
+// @name         AppendNewAction
+// @namespace    http://tampermonkey.net/
+// @version      2024-11-08
+// @description  try to take over the world!
+// @author       You
+// @match        https://ww9510.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=ww9510.com
+// @grant        none
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    // Wait until the document is ready
+    $(document).ready(function () {
+
+        // Select all rows in the table (you may need to adjust the selector to match your table)
+        $('table.main-table tr').each(function () {
+            // Find the action link (assuming it's an <a> tag inside the row)
+            var actionLink = $(this).find('a.c-main2'); // Change 'a.actionlink' to match your actual link class or selector
+
+            if (actionLink.length > 0) {
+                // Create a new action link
+                var newLink = $('<a></a>')
+                    .addClass('new-actionlink') // Add a class for styling (optional)
+                    .text('Use') // Set the text of the new link
+                    .attr('href', '#') // Set the href attribute (you can change this)
+                    .on('click', function () {
+                        //alert('New action clicked!');
+                        const $row = $(this).closest('tr');
+                        const value = $row.attr('data-id');
+                        const data = page_config.node_data[value];
+
+                        console.log(data.server_ip, data.server_port_raw, data.password_raw);
+
+
+                        fetch('http://localhost:5192/config', {
+                            method: 'POST', // or 'POST', 'PUT', etc.
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                // Add any additional headers here
+                            },
+                            body: JSON.stringify({ ip: data.server_ip.toString(), port: data.server_port_raw.toString(), password: data.password_raw.toString() }),
+                            mode: 'cors', // Set mode to 'cors' to enable cross-origin requests
+                            //credentials: 'include' // Optional: Include cookies if the server allows them
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok ' + response.statusText);
+                                }
+                                return response.json(); // Parse the JSON response if the server returns JSON
+                            })
+                            .then(data => {
+                                console.log('Data:', data);
+                                // Handle the data received
+                            })
+                            .catch(error => {
+                                console.error('Fetch error:', error);
+                            });
+
+
+                    });
+
+                // Append the new link after the existing one
+                actionLink.after(newLink);
+            }
+        });
+    });
+
+})();
+
+
