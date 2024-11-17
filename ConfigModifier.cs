@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace trojan_modifier;
 
-public class ConfigModifier(string configPath = "/usr/src/trojan/config.json")
+public class ConfigModifier(TrojanManager trojanManager, string configPath = "/usr/src/trojan/config.json")
 {
     private static readonly object LockObject = new object();
     private string ConfigPath { get; set; } = configPath;
@@ -22,7 +22,7 @@ public class ConfigModifier(string configPath = "/usr/src/trojan/config.json")
     /// <param name="json">json file</param>
     /// <returns></returns>
     private bool SaveConfig(string json
-)
+    )
     {
         try
         {
@@ -62,37 +62,7 @@ public class ConfigModifier(string configPath = "/usr/src/trojan/config.json")
 
     private void RestartService()
     {
-        // The name of the service you want to restart
-        var serviceName = "trojan"; // Replace with the name of your service
-
-        // Create the process to run the systemctl command
-        var startInfo = new ProcessStartInfo()
-        {
-            FileName = "/bin/bash", // Use bash shell to run systemctl
-            Arguments = $"-c \"sudo systemctl restart {serviceName}\"", // Run systemctl restart command
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        // Start the process to execute the command
-        using var process = Process.Start(startInfo);
-        // Read and print the output (stdout)
-        var output = process?.StandardOutput.ReadToEnd();
-        Console.WriteLine("Output:");
-        Console.WriteLine(output);
-
-        // Read and print any errors (stderr)
-        var error = process?.StandardError.ReadToEnd();
-        if (!string.IsNullOrEmpty(error))
-        {
-            Console.WriteLine("Error:");
-            Console.WriteLine(error);
-        }
-
-        // Wait for the process to finish
-        process?.WaitForExit();
+        trojanManager.StartTrojanAsync();
     }
 
     /// <summary>
@@ -116,8 +86,17 @@ public class ConfigModifier(string configPath = "/usr/src/trojan/config.json")
         }
 
         json = jsonObject.ToString(Formatting.Indented);
-        this.SaveConfig(json);
-        this.RestartService();
+        try
+        {
+            SaveConfig(json);
+            RestartService();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+
         return true;
     }
 }
