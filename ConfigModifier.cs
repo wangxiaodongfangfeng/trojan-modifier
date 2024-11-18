@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -7,22 +5,20 @@ namespace trojan_modifier;
 
 public class ConfigModifier(TrojanManager trojanManager, string configPath = "/usr/src/trojan/config.json")
 {
-    private static readonly object LockObject = new object();
-    private string ConfigPath { get; set; } = configPath;
-    private string BackupConfigPath { get; set; } = configPath.Replace("config.json", "config_backup.json");
+    private static readonly object LockObject = new();
+    private string ConfigPath { get; } = configPath;
+    private string BackupConfigPath { get; } = configPath.Replace("config.json", "config_backup.json");
 
     public string ReadConfig()
     {
-        return File.ReadAllText(this.ConfigPath);
+        return File.ReadAllText(ConfigPath);
     }
-
     /// <summary>
     ///  Save the modified config to the config file
     /// </summary>
     /// <param name="json">json file</param>
     /// <returns></returns>
-    private bool SaveConfig(string json
-    )
+    private bool SaveConfig(string json)
     {
         try
         {
@@ -35,7 +31,7 @@ public class ConfigModifier(TrojanManager trojanManager, string configPath = "/u
         catch (IOException e)
         {
             Console.WriteLine(e);
-            throw;
+            return false;
         }
 
         return true;
@@ -48,20 +44,20 @@ public class ConfigModifier(TrojanManager trojanManager, string configPath = "/u
             lock (LockObject)
             {
                 File.Move(BackupConfigPath, ConfigPath, true);
-                this.RestartService();
+                RestartService();
             }
         }
         catch (IOException e)
         {
             Console.WriteLine(e);
-            throw;
+            return false;
         }
 
         return true;
     }
-
     private void RestartService()
     {
+        // it will kill the previous one automatically
         trojanManager.StartTrojanAsync();
     }
 
@@ -74,21 +70,16 @@ public class ConfigModifier(TrojanManager trojanManager, string configPath = "/u
     /// <returns></returns>
     public bool Modify(string ip, string port, string password)
     {
-        var json = this.ReadConfig();
-        var jsonObject = JObject.Parse(json);
-
+        var jsonObject = JObject.Parse(ReadConfig());
         jsonObject["remote_addr"] = ip;
         jsonObject["remote_port"] = port;
-
         if (jsonObject["password"] is JArray { HasValues: true } passwords)
         {
             passwords[0] = password;
         }
-
-        json = jsonObject.ToString(Formatting.Indented);
         try
         {
-            SaveConfig(json);
+            SaveConfig(jsonObject.ToString(Formatting.Indented));
             RestartService();
         }
         catch (Exception e)
@@ -96,7 +87,6 @@ public class ConfigModifier(TrojanManager trojanManager, string configPath = "/u
             Console.WriteLine(e);
             return false;
         }
-
         return true;
     }
 }

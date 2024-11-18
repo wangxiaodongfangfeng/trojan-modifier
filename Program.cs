@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using trojan_modifier;
 
 var builder = WebApplication.CreateBuilder(args);
-var corsPolicy = "AllowWestWorldRequest";
+const string corsPolicy = "AllowWestWorldRequest";
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -26,21 +26,22 @@ app.UseCors(corsPolicy);
 // {
 app.UseSwagger();
 app.UseSwaggerUI();
-app.Use(async (context, next) =>
-{
-    Console.WriteLine("Incoming Request:");
-    Console.WriteLine($"Method: {context.Request.Method}");
-    Console.WriteLine($"Path: {context.Request.Path}");
-    Console.WriteLine($"Origin: {context.Request.Headers["Origin"]}");
-    Console.WriteLine($"Access-Control-Request-Method: {context.Request.Headers["Access-Control-Request-Method"]}");
-    Console.WriteLine(
-        $"Access-Control-Request-Headers: {context.Request.Headers["Access-Control-Request-Headers"]}");
-    await next.Invoke();
-});
+// this is an example of how to use middleware
+// app.Use(async (context, next) =>
+// {
+//     Console.WriteLine("Incoming Request:");
+//     Console.WriteLine($"Method: {context.Request.Method}");
+//     Console.WriteLine($"Path: {context.Request.Path}");
+//     Console.WriteLine($"Origin: {context.Request.Headers["Origin"]}");
+//     Console.WriteLine($"Access-Control-Request-Method: {context.Request.Headers["Access-Control-Request-Method"]}");
+//     Console.WriteLine(
+//         $"Access-Control-Request-Headers: {context.Request.Headers["Access-Control-Request-Headers"]}");
+//     await next.Invoke();
+// });
 //}
 app.UseHttpsRedirection();
 
-var trojanManager = new TrojanManager("./trojan/trojan", "./trojan/config.json");
+var trojanManager = new TrojanManager(Path.Combine(trojanPath, "trojan"), Path.Combine(trojanPath, "config.json"));
 var modifier = new ConfigModifier(trojanManager, Path.Combine(trojanPath, "config.json"));
 app.MapGet("/config", () =>
     {
@@ -67,17 +68,15 @@ app.MapPost("/config-pattern", (string body) =>
         var password = match.Groups[1].Value;
         var ip = match.Groups[2].Value;
         var port = match.Groups[3].Value;
-        modifier.Modify(ip, port, password);
-        return true;
+        return modifier.Modify(ip, port, password);
     })
     .WithName("ModifyConfigWithString")
     .WithOpenApi();
 
 trojanManager.StartTrojanAsync();
-
 app.Run();
 
-internal abstract record ConfigItem(string? Ip, string? Port, string? Password)
+internal record ConfigItem(string? Ip, string? Port, string? Password)
 {
     public override string ToString()
     {

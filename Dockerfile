@@ -10,6 +10,8 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app ./
 EXPOSE 5000
-EXPOSE 5000
+EXPOSE 5001
+EXPOSE 1080
+EXPOSE 443
 # Set the entry point for the application
 ENTRYPOINT ["./trojan-modifier"]

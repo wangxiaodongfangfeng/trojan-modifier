@@ -2,8 +2,8 @@
   "run_type": "client",
   "local_addr": "0.0.0.0",
   "local_port": 1080,
-  "remote_addr": "42.157.128.188",
-  "remote_port": "28125",
+  "remote_addr": "42.157.128.189",
+  "remote_port": "40196",
   "password": [
     "4Nc8Un"
   ],

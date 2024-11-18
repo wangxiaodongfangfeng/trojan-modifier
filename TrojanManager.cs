@@ -8,24 +8,42 @@ public class TrojanManager(string trojanPath, string configPath)
 
     public async void StartTrojanAsync()
     {
-        this.ProcessInstance?.Kill();
-        var startInfo = new ProcessStartInfo(trojanPath)
+        try
         {
-            Arguments = $"-c {configPath}",
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = false
-        };
-        using var process = Process.Start(startInfo);
-        this.ProcessInstance = process;
-        if (process != null) process.OutputDataReceived += (sender, e) => { Console.WriteLine(e.Data); };
-        await process?.WaitForExitAsync()!;
+            this.ProcessInstance?.Kill();
+            var startInfo = new ProcessStartInfo(trojanPath)
+            {
+                Arguments = $"-c {configPath}",
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = false
+            };
+            using var process = Process.Start(startInfo);
+            this.ProcessInstance = process;
+            if (process != null) process.OutputDataReceived += (sender, e) => { Console.WriteLine(e.Data); };
+            await process?.WaitForExitAsync()!;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Start trojan with failed information {e}");
+        }
     }
-
-    public bool StopTrojanAsync()
+    /// <summary>
+    /// Stop Trojan When I 
+    /// </summary>
+    /// <returns></returns>
+    public bool StopTrojan()
     {
-        this.ProcessInstance?.Kill();
+        try
+        {
+            ProcessInstance?.Kill();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to stop trojan service {e}");
+            return false;
+        }
         return true;
     }
 }
